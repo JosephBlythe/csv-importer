@@ -96,13 +96,29 @@ try {
 
     // Process CSV file if provided
     if (isset($options['file'])) {
+        // Set up a progress callback to show real-time feedback
+        $runner->setProgressCallback(function(string $type, string $message) {
+            // Only show errors and skipped records, not successes
+            if ($type === 'error') {
+                echo "✗ SKIPPED: " . $message . PHP_EOL;
+            } elseif ($type === 'skip') {
+                echo "• SKIPPED: " . $message . PHP_EOL;
+            }
+        });
+        
         $result = $runner->run(
             filePath: $options['file'],
             dryRun: $dryRun
         );
 
         if ($result) {
-            echo "SUCCESS: CSV import completed successfully.\n";
+            $counts = $runner->getCounts();
+            echo sprintf(
+                "SUCCESS: Successfully imported %d of %d records, %d skipped due to errors.\n",
+                $counts['success'],
+                $counts['total'],
+                $counts['error']
+            );
             exit(0);
         } else {
             echo "ERROR: CSV import failed.\n";

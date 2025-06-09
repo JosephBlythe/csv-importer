@@ -15,12 +15,43 @@ abstract class ScriptRunner
 {
     /** @var array<string, string> */
     protected array $errors = [];
+    
+    /** @var callable|null */
+    protected $progressCallback = null;
+    
+    /** @var array<string, int> Counts of processed records */
+    protected array $counts = [
+        'success' => 0,
+        'error' => 0,
+        'skip' => 0,
+        'total' => 0
+    ];
 
     public function __construct(
         protected readonly ConnectionInterface $connection,
         protected readonly Processor $processor,
         protected readonly Transformer $transformer
     ) {}
+    
+    /**
+     * Set a callback to report progress during processing.
+     *
+     * @param callable $callback Function that receives (string $type, string $message)
+     */
+    public function setProgressCallback(callable $callback): void
+    {
+        $this->progressCallback = $callback;
+    }
+    
+    /**
+     * Report progress using the registered callback.
+     */
+    protected function reportProgress(string $type, string $message): void
+    {
+        if ($this->progressCallback !== null) {
+            call_user_func($this->progressCallback, $type, $message);
+        }
+    }
 
     /**
      * Run the CSV import process.
@@ -32,6 +63,12 @@ abstract class ScriptRunner
     public function run(string $filePath, bool $dryRun = false): bool
     {
         $this->errors = [];
+        $this->counts = [
+            'success' => 0,
+            'error' => 0,
+            'skip' => 0,
+            'total' => 0
+        ];
 
         if (!is_readable($filePath)) {
             $this->errors['file'] = sprintf(
@@ -72,19 +109,26 @@ abstract class ScriptRunner
             while (($row = fgetcsv($handle)) !== false) {
                 // Skip empty rows
                 if (empty(array_filter($row))) {
+                    $this->counts['skip']++;
+                    $this->reportProgress('skip', "Skipped empty row at line {$lineNumber}");
+                    $lineNumber++;
                     continue;
                 }
 
                 $totalRows++;
+                $this->counts['total']++;
 
                 // Check column count
                 if (count($row) !== count($headers)) {
-                    $this->errors["format_line_{$lineNumber}"] = sprintf(
+                    $errorMessage = sprintf(
                         'Wrong number of columns at line %d: expected %d, got %d',
                         $lineNumber,
                         count($headers),
                         count($row)
                     );
+                    $this->errors["format_line_{$lineNumber}"] = $errorMessage;
+                    $this->counts['error']++;
+                    $this->reportProgress('error', $errorMessage);
                     $lineNumber++;
                     continue;
                 }
@@ -92,6 +136,10 @@ abstract class ScriptRunner
                 // Process the row
                 if ($this->processRow($row, $headers, $lineNumber, $dryRun)) {
                     $processedCount++;
+                    $this->counts['success']++;
+                    $this->reportProgress('success', "Successfully processed record at line {$lineNumber}");
+                } else {
+                    $this->counts['error']++;
                 }
                 $lineNumber++;
             }
@@ -126,12 +174,18 @@ abstract class ScriptRunner
                 // Get processor errors
                 $processorErrors = $this->processor->getErrors();
                 
-                // Add line-specific error
-                $this->errors["processing_line_{$lineNumber}"] = sprintf(
+                // Format error message
+                $errorMessage = sprintf(
                     'Error processing line %d: %s',
                     $lineNumber,
                     implode('; ', $processorErrors)
                 );
+                
+                // Add line-specific error
+                $this->errors["processing_line_{$lineNumber}"] = $errorMessage;
+                
+                // Report the error
+                $this->reportProgress('error', $errorMessage);
                 
                 // If processor has validation errors, add them to the general validation error
                 if (isset($processorErrors['validation'])) {
@@ -150,6 +204,9 @@ abstract class ScriptRunner
         } catch (\InvalidArgumentException $e) {
             $errorMessage = sprintf('Invalid data at line %d: %s', $lineNumber, $e->getMessage());
             $this->errors["validation_line_{$lineNumber}"] = $errorMessage;
+            
+            // Report the validation error
+            $this->reportProgress('error', $errorMessage);
             
             // Also store a general validation error so tests can find it
             if (!isset($this->errors['validation'])) {
@@ -178,5 +235,15 @@ abstract class ScriptRunner
     public function getErrors(): array
     {
         return $this->errors;
+    }
+
+    /**
+     * Get the counts of processed records.
+     *
+     * @return array<string, int>
+     */
+    public function getCounts(): array
+    {
+        return $this->counts;
     }
 }
