@@ -8,6 +8,7 @@ use App\Database\ConnectionInterface;
 use App\Model\User;
 use App\Processor\UserProcessor;
 use App\Transformer\UserTransformer;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Concrete implementation of ScriptRunner for importing user data.
@@ -18,12 +19,14 @@ final class UserScriptRunner extends ScriptRunner
      * Create a new UserScriptRunner instance.
      */
     public function __construct(
-        ConnectionInterface $connection
+        ConnectionInterface $connection,
+        ?OutputInterface $output = null
     ) {
         parent::__construct(
             connection: $connection,
             processor: new UserProcessor($connection, new UserTransformer()),
-            transformer: new UserTransformer()
+            transformer: new UserTransformer(),
+            output: $output
         );
     }
 

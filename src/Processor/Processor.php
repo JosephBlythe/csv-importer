@@ -10,6 +10,14 @@ namespace App\Processor;
 interface Processor
 {
     /**
+     * Validate the given data without processing it.
+     *
+     * @param mixed $data The data to validate
+     * @return bool True if validation passes, false otherwise
+     */
+    public function validate(mixed $data): bool;
+
+    /**
      * Process the given data.
      *
      * @param mixed $data The data to process

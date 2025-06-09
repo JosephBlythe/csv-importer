@@ -20,4 +20,11 @@ final class TestScriptRunner extends ScriptRunner
     {
         return true;
     }
+
+    protected function validateHeaders(array $headers): void
+    {
+        if (!in_array('name', $headers) || !in_array('surname', $headers)) {
+            throw new \RuntimeException('Missing required headers: name and surname');
+        }
+    }
 }

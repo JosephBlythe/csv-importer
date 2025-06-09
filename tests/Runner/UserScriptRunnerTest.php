@@ -24,6 +24,9 @@ final class UserScriptRunnerTest extends TestCase
         $this->runner = new UserScriptRunner($this->connection);
         $this->testDataDir = dirname(__DIR__) . '/data';
 
+        // Enable test mode to suppress console output
+        $this->runner->setTestMode(true);
+
         // Clean up any existing test data
         $this->cleanupDatabase();
     }

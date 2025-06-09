@@ -22,20 +22,42 @@ final class UserProcessor implements Processor
     ) {}
 
     /**
+     * Validate user data without storing in database.
+     *
+     * @param mixed $data The data to validate
+     */
+    public function validate(mixed $data): bool
+    {
+        $this->errors = [];
+
+        if (!is_array($data)) {
+            $this->errors['validation'] = 'Data must be an array';
+            return false;
+        }
+
+        try {
+            // Attempt to create user object to validate data
+            User::fromArray($data);
+            return true;
+        } catch (\InvalidArgumentException $e) {
+            $this->errors['validation'] = $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
      * Process user data and store in database.
      *
      * @param array<string, string> $data Raw user data
      */
     public function process(mixed $data): bool
     {
-        $this->errors = [];
-
-        if (!is_array($data)) {
-            throw new \InvalidArgumentException('Data must be an array');
+        // First validate the data
+        if (!$this->validate($data)) {
+            return false;
         }
 
         try {
-            // Create and validate user - might throw InvalidArgumentException
             $user = User::fromArray($data);
             
             // Check if email already exists

@@ -32,23 +32,27 @@ This project uses Docker for development and includes:
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone [repository-url]
 cd csv-importer
 ```
 
 2. Set up environment variables:
+
 ```bash
 cp example.env .env
 # Edit .env with your database credentials if needed
 ```
 
 3. Start the Docker environment:
+
 ```bash
 docker compose up -d --build
 ```
 
 4. Install PHP dependencies:
+
 ```bash
 docker compose exec app composer install
 ```
@@ -56,12 +60,15 @@ docker compose exec app composer install
 ## Development
 
 ### Running Tests
+
 To run the test suite:
+
 ```bash
 docker compose exec app vendor/bin/phpunit
 ```
 
 ### Docker Commands
+
 - Start containers:
   ```bash
   docker compose up -d
@@ -92,6 +99,7 @@ docker-compose exec app php src/scripts/user_upload.php [options] [csv_file]
 ```
 
 Options:
+
 - `--file [csv file name]` – Name of the CSV file to be parsed
 - `--create_table` – Build the MySQL database table
 - `--dry_run` – Run the script but not insert into the DB

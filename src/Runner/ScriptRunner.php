@@ -7,6 +7,9 @@ namespace App\Runner;
 use App\Database\ConnectionInterface;
 use App\Processor\Processor;
 use App\Transformer\Transformer;
+use Symfony\Component\Console\Formatter\OutputFormatterStyle;
+use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Abstract base class for CSV import process runners.
@@ -26,12 +29,49 @@ abstract class ScriptRunner
         'skip' => 0,
         'total' => 0
     ];
+    
+    /** @var OutputInterface The configured console output instance */
+    protected OutputInterface $output;
 
     public function __construct(
         protected readonly ConnectionInterface $connection,
         protected readonly Processor $processor,
-        protected readonly Transformer $transformer
-    ) {}
+        protected readonly Transformer $transformer,
+        ?OutputInterface $output = null
+    ) {
+        // If no output provided, create a default ConsoleOutput with standard styles
+        $this->output = $output ?? $this->createDefaultOutput();
+    }
+    
+    /**
+     * Creates a default ConsoleOutput instance with styled formatting.
+     *
+     * @return OutputInterface
+     */
+    protected function createDefaultOutput(): OutputInterface
+    {
+        $output = new ConsoleOutput();
+        $output->setDecorated(true); // Force color output
+        $formatter = $output->getFormatter();
+        
+        // Configure standard output styles
+        $formatter->setStyle('success', new OutputFormatterStyle('green', null, ['bold']));
+        $formatter->setStyle('error', new OutputFormatterStyle('red', null, ['bold']));
+        $formatter->setStyle('comment', new OutputFormatterStyle('yellow', null, ['bold']));
+        $formatter->setStyle('info', new OutputFormatterStyle('blue', null, ['bold']));
+        
+        return $output;
+    }
+    
+    /**
+     * Get the configured output interface.
+     *
+     * @return OutputInterface
+     */
+    public function getOutput(): OutputInterface
+    {
+        return $this->output;
+    }
     
     /**
      * Set a callback to report progress during processing.
@@ -43,6 +83,17 @@ abstract class ScriptRunner
         $this->progressCallback = $callback;
     }
     
+    /** @var bool */
+    private bool $isTestMode = false;
+
+    /**
+     * Set test mode to suppress console output during tests.
+     */
+    public function setTestMode(bool $enabled = true): void
+    {
+        $this->isTestMode = $enabled;
+    }
+
     /**
      * Report progress using the registered callback.
      */
@@ -126,7 +177,7 @@ abstract class ScriptRunner
                         count($headers),
                         count($row)
                     );
-                    $this->errors["format_line_{$lineNumber}"] = $errorMessage;
+                    $this->errors['format'] = $errorMessage;
                     $this->counts['error']++;
                     $this->reportProgress('error', $errorMessage);
                     $lineNumber++;
@@ -169,51 +220,62 @@ abstract class ScriptRunner
             $data = array_combine($headers, $row);
             $transformedData = $this->transformer->transform($data);
 
-            // Process data (validate and save)
-            if (!$dryRun && !$this->processor->process($transformedData)) {
-                // Get processor errors
+            // Always validate data, regardless of dry run mode
+            if (!$this->processor->validate($transformedData)) {
                 $processorErrors = $this->processor->getErrors();
                 
-                // Format error message
-                $errorMessage = sprintf(
-                    'Error processing line %d: %s',
-                    $lineNumber,
-                    implode('; ', $processorErrors)
+                // Create a detailed error message
+                $errorDetails = array_map(
+                    fn($field, $error) => "{$field}: {$error}",
+                    array_keys($processorErrors),
+                    array_values($processorErrors)
                 );
                 
-                // Add line-specific error
-                $this->errors["processing_line_{$lineNumber}"] = $errorMessage;
+                $errorMessage = sprintf(
+                    'Validation error at line %d: %s',
+                    $lineNumber,
+                    implode('; ', $errorDetails)
+                );
                 
-                // Report the error
+                // Store validation error
+                $this->errors["validation_line_{$lineNumber}"] = $errorMessage;
                 $this->reportProgress('error', $errorMessage);
                 
-                // If processor has validation errors, add them to the general validation error
-                if (isset($processorErrors['validation'])) {
-                    if (!isset($this->errors['validation'])) {
-                        $this->errors['validation'] = $processorErrors['validation'];
-                    } else {
-                        $this->errors['validation'] .= "; " . $processorErrors['validation'];
-                    }
-                }
-                
                 return false;
+            }
+
+            // Only attempt processing if not in dry run mode
+            if (!$dryRun) {
+                if (!$this->processor->process($transformedData)) {
+                    $processorErrors = $this->processor->getErrors();
+                    $errorMessage = sprintf(
+                        'Processing error at line %d: %s',
+                        $lineNumber,
+                        implode('; ', $processorErrors)
+                    );
+                    
+                    $this->errors['processing'] = $errorMessage;
+                    $this->reportProgress('error', $errorMessage);
+                    return false;
+                }
+            } else {
+                // In dry run mode, report successful validation
+                $this->reportProgress('success', sprintf(
+                    'Line %d validated successfully (dry run)',
+                    $lineNumber
+                ));
             }
 
             return true;
 
         } catch (\InvalidArgumentException $e) {
-            $errorMessage = sprintf('Invalid data at line %d: %s', $lineNumber, $e->getMessage());
+            $errorMessage = sprintf(
+                'Invalid data at line %d: %s',
+                $lineNumber,
+                $e->getMessage()
+            );
             $this->errors["validation_line_{$lineNumber}"] = $errorMessage;
-            
-            // Report the validation error
             $this->reportProgress('error', $errorMessage);
-            
-            // Also store a general validation error so tests can find it
-            if (!isset($this->errors['validation'])) {
-                $this->errors['validation'] = $errorMessage;
-            } else {
-                $this->errors['validation'] .= "; {$errorMessage}";
-            }
             
             return false;
         }
