@@ -7,11 +7,16 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Dotenv\Dotenv;
 
 // Load environment variables
-$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+$rootDir = dirname(__DIR__);
+$dotenv = Dotenv::createImmutable($rootDir);
 $dotenv->safeLoad();
 
-// Required environment variables
-$dotenv->required(['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD']);
+// Set default values if not provided
+$_ENV['DB_HOST'] = $_ENV['DB_HOST'] ?? 'db';
+$_ENV['DB_PORT'] = $_ENV['DB_PORT'] ?? '5432';
+$_ENV['DB_NAME'] = $_ENV['DB_NAME'] ?? 'csv_importer';
+$_ENV['DB_USER'] = $_ENV['DB_USER'] ?? 'postgres';
+$_ENV['DB_PASSWORD'] = $_ENV['DB_PASSWORD'] ?? 'secret';
 
 // Set error reporting
 error_reporting(E_ALL);
