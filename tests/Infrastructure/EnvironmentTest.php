@@ -6,7 +6,9 @@ namespace App\Tests\Infrastructure;
 
 use PDO;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
+#[CoversNothing]
 class EnvironmentTest extends TestCase
 {
     public function testPhpVersion(): void
@@ -36,6 +38,4 @@ class EnvironmentTest extends TestCase
             );
         }
     }
-
-}
 }

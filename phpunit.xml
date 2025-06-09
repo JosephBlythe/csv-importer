@@ -17,6 +17,9 @@
         <testsuite name="Database">
             <directory>tests/Database</directory>
         </testsuite>
+        <testsuite name="Model">
+            <directory>tests/Model</directory>
+        </testsuite>
     </testsuites>
     <coverage>
         <include>
