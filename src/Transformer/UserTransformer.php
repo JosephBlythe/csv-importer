@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Transformer;
 
+use App\Model\User;
+
 /**
  * Transforms raw user data into a format suitable for the User model.
  */
@@ -22,12 +24,8 @@ final class UserTransformer implements Transformer
             throw new \InvalidArgumentException('Data must be an array');
         }
 
-        // Map CSV headers to user fields
-        $mapping = [
-            'name' => ['name', 'first_name', 'firstname'],
-            'surname' => ['surname', 'last_name', 'lastname'],
-            'email' => ['email', 'email_address', 'emailaddress'],
-        ];
+        // Get field mappings from User model
+        $mapping = User::getFieldMappings();
 
         $result = [];
 
@@ -60,7 +58,9 @@ final class UserTransformer implements Transformer
             if (isset($lowerData[$lowerKey])) {
                 $value = $lowerData[$lowerKey];
                 if (is_string($value) || is_numeric($value)) {
-                    return trim((string)$value);
+                    $value = trim((string)$value);
+                    
+                    return $value;
                 }
             }
         }

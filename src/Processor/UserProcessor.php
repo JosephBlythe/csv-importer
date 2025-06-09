@@ -30,12 +30,13 @@ final class UserProcessor implements Processor
     {
         $this->errors = [];
 
+        if (!is_array($data)) {
+            throw new \InvalidArgumentException('Data must be an array');
+        }
+
         try {
-            // Transform the data
-            $transformedData = $this->transformer->transform($data);
-            
-            // Create and validate user
-            $user = User::fromArray($transformedData);
+            // Create and validate user - might throw InvalidArgumentException
+            $user = User::fromArray($data);
             
             // Check if email already exists
             $pdo = $this->connection->getPdo();

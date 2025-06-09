@@ -103,4 +103,29 @@ final class User
         }
         $this->email = $email;
     }
+
+    /**
+     * Get the field mappings for CSV import.
+     * Maps model field names to possible CSV header names.
+     *
+     * @return array<string, array<string>>
+     */
+    public static function getFieldMappings(): array
+    {
+        return [
+            'name' => ['name', 'first_name', 'firstname'],
+            'surname' => ['surname', 'last_name', 'lastname'],
+            'email' => ['email', 'email_address', 'emailaddress'],
+        ];
+    }
+
+    /**
+     * Get the required fields for this model.
+     *
+     * @return array<string>
+     */
+    public static function getRequiredFields(): array
+    {
+        return ['name', 'surname', 'email'];
+    }
 }

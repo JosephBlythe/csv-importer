@@ -26,6 +26,9 @@
         <testsuite name="Transformer">
             <directory>tests/Transformer</directory>
         </testsuite>
+        <testsuite name="Runner">
+            <directory>tests/Runner</directory>
+        </testsuite>
     </testsuites>
     <coverage>
         <include>
