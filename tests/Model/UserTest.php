@@ -14,12 +14,12 @@ final class UserTest extends TestCase
     public function testUserCanBeCreatedWithValidData(): void
     {
         $user = new User(
-            name: 'John Doe',
+            name: 'John',
             surname: 'Smith',
             email: 'john.doe@example.com'
         );
 
-        $this->assertSame('John Doe', $user->getName());
+        $this->assertSame('John', $user->getName());
         $this->assertSame('Smith', $user->getSurname());
         $this->assertSame('john.doe@example.com', $user->getEmail());
     }
@@ -92,5 +92,17 @@ final class UserTest extends TestCase
             'name' => 'John',
             'surname' => 'Doe'
         ]);
+    }
+
+    public function testNameAndSurnameAreCapitalized(): void
+    {
+        $user = new User(
+            name: 'john',
+            surname: 'doe',
+            email: 'john.doe@example.com'
+        );
+
+        $this->assertSame('John', $user->getName());
+        $this->assertSame('Doe', $user->getSurname());
     }
 }

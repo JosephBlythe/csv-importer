@@ -40,12 +40,18 @@ final class User
                     sprintf('Missing required field: %s', $field)
                 );
             }
+            if (!is_string($data[$field])) {
+                throw new \InvalidArgumentException(
+                    sprintf('Field %s must be a string', $field)
+                );
+            }
         }
 
+        /** @var array<string, string> $data */
         return new self(
-            name: (string) $data['name'],
-            surname: (string) $data['surname'],
-            email: (string) $data['email']
+            name: $data['name'],
+            surname: $data['surname'],
+            email: $data['email']
         );
     }
 
@@ -72,7 +78,7 @@ final class User
         if (trim($name) === '') {
             throw new \InvalidArgumentException('Name cannot be empty');
         }
-        $this->name = trim($name);
+        $this->name = ucfirst(strtolower(trim($name)));
     }
 
     /**
@@ -83,7 +89,7 @@ final class User
         if (trim($surname) === '') {
             throw new \InvalidArgumentException('Surname cannot be empty');
         }
-        $this->surname = trim($surname);
+        $this->surname = ucfirst(strtolower(trim($surname)));
     }
 
     /**

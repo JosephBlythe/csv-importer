@@ -20,6 +20,12 @@
         <testsuite name="Model">
             <directory>tests/Model</directory>
         </testsuite>
+        <testsuite name="Processor">
+            <directory>tests/Processor</directory>
+        </testsuite>
+        <testsuite name="Transformer">
+            <directory>tests/Transformer</directory>
+        </testsuite>
     </testsuites>
     <coverage>
         <include>
