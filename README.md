@@ -28,23 +28,27 @@ data/          # Sample CSV files
 ### With Docker (Recommended)
 
 1. Clone the repository:
+
 ```bash
 git clone [repository-url]
 cd csv-importer
 ```
 
 2. Set up environment variables:
+
 ```bash
 cp example.env .env
 # Edit .env with your database credentials if needed
 ```
 
 3. Start the Docker environment:
+
 ```bash
 docker compose up -d --build
 ```
 
 4. Install PHP dependencies:
+
 ```bash
 docker compose exec app composer install
 ```
@@ -52,6 +56,7 @@ docker compose exec app composer install
 ### Without Docker
 
 1. Clone and setup:
+
 ```bash
 git clone [repository-url]
 cd csv-importer
@@ -59,6 +64,7 @@ composer install
 ```
 
 2. Configure environment:
+
 ```bash
 cp example.env .env
 # Edit .env with your local PostgreSQL credentials
@@ -126,11 +132,13 @@ php src/Scripts/user_upload.php --file data/users.csv -u username -p password -h
 ### Running Tests
 
 With Docker:
+
 ```bash
 docker exec csv-importer-app-1 vendor/bin/phpunit
 ```
 
 Without Docker:
+
 ```bash
 vendor/bin/phpunit
 ```
@@ -138,11 +146,13 @@ vendor/bin/phpunit
 ### Running Static Analysis
 
 With Docker:
+
 ```bash
 docker exec csv-importer-app-1 vendor/bin/phpstan analyse
 ```
 
 Without Docker:
+
 ```bash
 vendor/bin/phpstan analyse
 ```
@@ -173,27 +183,22 @@ vendor/bin/phpstan analyse
 ## CSV File Format
 
 The CSV file must have headers and contain the following columns:
+
 - name
 - surname
 - email
 
 Example:
+
 ```csv
 name,surname,email
 John,Smith,john.smith@example.com
 ```
 
 Notes:
+
 - Email addresses must be in a valid format
 - Email addresses must be unique in the database
 - Names and surnames will be capitalized automatically
 - Empty rows are skipped
 - Invalid rows will be reported but won't stop the import process
-
-- `--file [csv file name]` – Name of the CSV file to be parsed
-- `--create_table` – Build the MySQL database table
-- `--dry_run` – Run the script but not insert into the DB
-- `-u [MySQL username]`
-- `-p [MySQL password]`
-- `-h [MySQL host]`
-- `--help` – Display help
