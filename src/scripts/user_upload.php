@@ -16,10 +16,12 @@ $connection = Connection::fromEnvironment();
 $runner = new UserScriptRunner($connection);
 $output = $runner->getOutput();
 
-// Force colors in Docker environment
-putenv('COLUMNS=120');
-putenv('TERM=xterm-256color');
-$output->setDecorated(true);
+// Force colors in development Docker environment
+if (getenv('APP_ENV') === 'development') {
+    putenv('COLUMNS=120');
+    putenv('TERM=xterm-256color');
+    $output->setDecorated(true);
+}
 
 // Set console width for table formatting
 if ($output instanceof \Symfony\Component\Console\Output\ConsoleOutput) {
@@ -135,6 +137,7 @@ try {
         // Set up a progress callback to show real-time feedback
         $errorsDetected = false;
         $isVerbose = isset($options['verbose']);
+        $runner->setVerbose($isVerbose);
         $runner->setProgressCallback(function(string $type, string $message) use ($output, &$errorsDetected, $isVerbose) {
             if ($type === 'error') {
                 $output->writeln('<error>✗ SKIPPED: ' . $message . '</error>');
