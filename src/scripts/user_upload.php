@@ -45,7 +45,6 @@ if ($argc === 1 || in_array('--help', $argv)) {
         '  <comment>-u</comment> [DB username]         Database username',
         '  <comment>-p</comment> [DB password]         Database password',
         '  <comment>-h</comment> [DB host]             Database host',
-        '  <comment>--verbose</comment>                Show detailed progress messages',
         '  <comment>--help</comment>                   Display this help message',
         '',
     ]);
@@ -53,7 +52,7 @@ if ($argc === 1 || in_array('--help', $argv)) {
 }
 
 // Process command line arguments
-$options = getopt('u:p:h:', ['file:', 'create_table', 'drop_table', 'dry_run', 'verbose', 'help']);
+$options = getopt('u:p:h:', ['file:', 'create_table', 'drop_table', 'dry_run', 'help']);
 
 // Apply command line database credentials if provided
 if (isset($options['h'])) {
@@ -136,9 +135,7 @@ try {
         
         // Set up a progress callback to show real-time feedback
         $errorsDetected = false;
-        $isVerbose = isset($options['verbose']);
-        $runner->setVerbose($isVerbose);
-        $runner->setProgressCallback(function(string $type, string $message) use ($output, &$errorsDetected, $isVerbose) {
+        $runner->setProgressCallback(function(string $type, string $message) use ($output, &$errorsDetected) {
             if ($type === 'error') {
                 $output->writeln('<error>✗ SKIPPED: ' . $message . '</error>');
                 $errorsDetected = true;

@@ -86,9 +86,6 @@ abstract class ScriptRunner
     /** @var bool */
     private bool $isTestMode = false;
 
-    /** @var bool */
-    private bool $isVerbose = false;
-
     /**
      * Set test mode to suppress console output during tests.
      */
@@ -98,26 +95,12 @@ abstract class ScriptRunner
     }
 
     /**
-     * Set verbose mode to control output detail level.
-     */
-    public function setVerbose(bool $enabled = true): void 
-    {
-        $this->isVerbose = $enabled;
-    }
-
-    /**
      * Report progress using the registered callback.
-     * Only verbose messages are sent if verbosity is enabled.
      */
     protected function reportProgress(string $type, string $message): void
     {
         // Do nothing in test mode or if no callback is registered
         if ($this->isTestMode || $this->progressCallback === null) {
-            return;
-        }
-
-        // For success messages, only show in verbose mode
-        if ($type === 'success' && !$this->isVerbose) {
             return;
         }
 
