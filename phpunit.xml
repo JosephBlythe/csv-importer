@@ -37,10 +37,11 @@
     </coverage>
     <php>
         <env name="APP_ENV" value="testing"/>
-        <env name="DB_HOST" value="db"/>
-        <env name="DB_PORT" value="5432"/>
-        <env name="DB_NAME" value="csv_importer"/>
-        <env name="DB_USER" value="postgres"/>
-        <env name="DB_PASSWORD" value="secret"/>
+        <!-- Database configuration from environment -->
+        <env name="DB_HOST" value="${DB_HOST:-db}"/>
+        <env name="DB_PORT" value="${DB_PORT:-5432}"/>
+        <env name="DB_NAME" value="${DB_NAME:-csv_importer_test}"/>
+        <env name="DB_USER" value="${DB_USER:-postgres}"/>
+        <env name="DB_PASSWORD" value="${DB_PASSWORD:-secret}"/>
     </php>
 </phpunit>

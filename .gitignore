@@ -2,6 +2,8 @@
 .env
 .env.backup
 .env.production
+.env.test
+.env.*.local
 
 # Composer dependencies
 /vendor/

@@ -11,20 +11,20 @@ services:
       db:
         condition: service_healthy
     environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=csv_importer
-      - DB_USER=postgres
-      - DB_PASSWORD=secret
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-csv_importer}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
 
   db:
     image: postgres:13
     environment:
-      - POSTGRES_DB=csv_importer
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=${DB_NAME:-csv_importer}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-secret}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
