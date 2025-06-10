@@ -39,7 +39,7 @@ class ScriptRunnerTest extends TestCase
     public function testRunProcessesCsvFileSuccessfully(): void
     {
         $csvFile = __DIR__ . '/../../data/test.csv';
-        $csvData = "name,surname,email\njohn,doe,john.doe@example.com\n";
+        $csvData = "name,surname,email\nJohn,Doe,john.doe@example.com\n";
         
         // Create test CSV file
         file_put_contents($csvFile, $csvData);
@@ -51,6 +51,10 @@ class ScriptRunnerTest extends TestCase
                 'surname' => 'Doe',
                 'email' => 'john.doe@example.com'
             ]);
+            
+        $this->processor->expects($this->once())
+            ->method('validate')
+            ->willReturn(true);
 
         $this->processor->expects($this->once())
             ->method('process')
@@ -88,7 +92,7 @@ class ScriptRunnerTest extends TestCase
         unlink($csvFile);
     }
 
-    public function testDryRunDoesNotCallProcessor(): void
+    public function testDryRunValidatesButDoesNotProcess(): void
     {
         $csvFile = __DIR__ . '/../../data/test.csv';
         file_put_contents($csvFile, "name,surname,email\njohn,doe,john.doe@example.com\n");
@@ -101,6 +105,12 @@ class ScriptRunnerTest extends TestCase
                 'email' => 'john.doe@example.com'
             ]);
 
+        // Expect validate to be called
+        $this->processor->expects($this->once())
+            ->method('validate')
+            ->willReturn(true);
+
+        // But expect process to NOT be called
         $this->processor->expects($this->never())
             ->method('process');
 
@@ -115,7 +125,7 @@ class ScriptRunnerTest extends TestCase
     public function testRunHandlesProcessingErrors(): void
     {
         $csvFile = __DIR__ . '/../../data/test.csv';
-        file_put_contents($csvFile, "name,surname,email\njohn,doe,john.doe@example.com\n");
+        file_put_contents($csvFile, "name,surname,email\nJohn,Doe,john.doe@example.com\n");
 
         $this->transformer->expects($this->once())
             ->method('transform')
@@ -126,12 +136,16 @@ class ScriptRunnerTest extends TestCase
             ]);
 
         $this->processor->expects($this->once())
+            ->method('validate')
+            ->willReturn(true);
+
+        $this->processor->expects($this->once())
             ->method('process')
             ->willReturn(false);
 
         $this->processor->expects($this->once())
             ->method('getErrors')
-            ->willReturn(['validation' => 'Invalid data format']);
+            ->willReturn(['error' => 'Failed to process record']);
 
         $result = $this->runner->run($csvFile);
 

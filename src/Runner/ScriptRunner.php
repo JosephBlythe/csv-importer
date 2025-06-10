@@ -86,6 +86,9 @@ abstract class ScriptRunner
     /** @var bool */
     private bool $isTestMode = false;
 
+    /** @var bool */
+    private bool $isVerbose = false;
+
     /**
      * Set test mode to suppress console output during tests.
      */
@@ -95,13 +98,30 @@ abstract class ScriptRunner
     }
 
     /**
+     * Set verbose mode to control output detail level.
+     */
+    public function setVerbose(bool $enabled = true): void 
+    {
+        $this->isVerbose = $enabled;
+    }
+
+    /**
      * Report progress using the registered callback.
+     * Only verbose messages are sent if verbosity is enabled.
      */
     protected function reportProgress(string $type, string $message): void
     {
-        if ($this->progressCallback !== null) {
-            call_user_func($this->progressCallback, $type, $message);
+        // Do nothing in test mode or if no callback is registered
+        if ($this->isTestMode || $this->progressCallback === null) {
+            return;
         }
+
+        // For success messages, only show in verbose mode
+        if ($type === 'success' && !$this->isVerbose) {
+            return;
+        }
+
+        call_user_func($this->progressCallback, $type, $message);
     }
 
     /**
@@ -220,7 +240,7 @@ abstract class ScriptRunner
             $data = array_combine($headers, $row);
             $transformedData = $this->transformer->transform($data);
 
-            // Always validate data, regardless of dry run mode
+            // In any mode, we validate the data for correctness
             if (!$this->processor->validate($transformedData)) {
                 $processorErrors = $this->processor->getErrors();
                 
@@ -237,35 +257,50 @@ abstract class ScriptRunner
                     implode('; ', $errorDetails)
                 );
                 
-                // Store validation error
+                // Store validation errors
                 $this->errors["validation_line_{$lineNumber}"] = $errorMessage;
+                // Also store a general validation error for tests and overall status
+                if (!isset($this->errors['validation'])) {
+                    $this->errors['validation'] = $errorMessage;
+                } else {
+                    $this->errors['validation'] .= "; " . $errorMessage;
+                }
                 $this->reportProgress('error', $errorMessage);
                 
                 return false;
             }
 
-            // Only attempt processing if not in dry run mode
-            if (!$dryRun) {
-                if (!$this->processor->process($transformedData)) {
-                    $processorErrors = $this->processor->getErrors();
-                    $errorMessage = sprintf(
-                        'Processing error at line %d: %s',
-                        $lineNumber,
-                        implode('; ', $processorErrors)
-                    );
-                    
-                    $this->errors['processing'] = $errorMessage;
-                    $this->reportProgress('error', $errorMessage);
-                    return false;
-                }
-            } else {
-                // In dry run mode, report successful validation
+            // For dry run, skip actual processing after validation
+            if ($dryRun) {
                 $this->reportProgress('success', sprintf(
                     'Line %d validated successfully (dry run)',
                     $lineNumber
                 ));
+                return true;
             }
 
+            // Process the validated data
+            if (!$this->processor->process($transformedData)) {
+                $processorErrors = $this->processor->getErrors();
+                $errorMessage = sprintf(
+                    'Processing error at line %d: %s',
+                    $lineNumber,
+                    implode('; ', $processorErrors)
+                );
+                
+                // Store both line-specific and general processing errors
+                $this->errors["processing_line_{$lineNumber}"] = $errorMessage;
+                if (!isset($this->errors['processing'])) {
+                    $this->errors['processing'] = $errorMessage;
+                } else {
+                    $this->errors['processing'] .= "; " . $errorMessage;
+                }
+                
+                $this->reportProgress('error', $errorMessage);
+                return false;
+            }
+
+            $this->reportProgress('success', "Successfully processed record at line {$lineNumber}");
             return true;
 
         } catch (\InvalidArgumentException $e) {

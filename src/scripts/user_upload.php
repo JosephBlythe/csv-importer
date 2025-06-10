@@ -141,7 +141,7 @@ try {
                 $errorsDetected = true;
             } elseif ($type === 'skip') {
                 $output->writeln('<comment>• SKIPPED: ' . $message . '</comment>');
-            } elseif ($type === 'success' && $isVerbose) {
+            } elseif ($type === 'success') {
                 $output->writeln('<info>✓ IMPORTED: ' . $message . '</info>');
             }
         });
